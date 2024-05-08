@@ -1,0 +1,133 @@
+.checkout_details_area form label {
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.checkout_details_area form label span {
+    color: #121212BF;
+}
+
+.checkout_details_area form .form-control,
+.checkout_details_area form .custom-select {
+    height: 52px;
+    border: none;
+    background-color: #f4f2f8;
+    border-radius: 0;
+}
+
+.order-details-confirmation {
+    width: 100%;
+    border: 2px solid #ebebeb;
+    padding: 40px;
+}
+
+.order-details-confirmation .order-details-form li {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    font-size: 12px;
+    text-transform: uppercase;
+    padding: 20px 0;
+    border-bottom: 2px solid #ebebeb;
+}
+
+.order-details-confirmation .card-header h6 a {
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.order-details-confirmation .card-header h6 a i {
+    color: #9f9f9f;
+}
+
+.order-details-confirmation .card {
+    border: none;
+}
+
+.order-details-confirmation .card-header {
+    background-color: transparent;
+    border-bottom: none;
+}
+
+.order-details-confirmation .card-body p {
+    font-size: 12px;
+    line-height: 2;
+    color: #9f9f9f;
+}
+
+
+
+
+// GUI Updates
+
+
+.input-head {
+    font-size: 22px;
+    color: #000;
+    font-weight: 600;
+}
+
+.input-styles {
+    padding: 12px !important;
+}
+
+.input-styles:focus {
+    color: #495057;
+    background-color: #fff;
+    border-color: #000;
+    outline: 0;
+    // box-shadow: 0 0 0 0.2rem grey;
+    box-shadow: none;
+}
+
+
+.accordion-head:focus {
+    z-index: 3;
+    border-color: #fff;
+    outline: 0;
+    background-color: #F5F5F5;
+    // box-shadow: 0 0 0 0.25rem rgba(13,110,253,.25);
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, .25);
+}
+
+.accordion-button:not(.collapsed) {
+    color: #000;
+    background-color: #e7f1ff;
+    background-color: #F5F5F5;
+    box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .125);
+}
+
+
+.accordion-head:focus {
+    z-index: 3;
+    border-color: #fff;
+    outline: 0;
+    background-color: #F5F5F5;
+    // box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    box-shadow: none;
+}
+
+.pay-now-btn{
+    padding: 10px 0px;
+    background-color: transparent;
+    color: #000;
+    width: 100%;
+    border: 1px solid #000;
+    transition: 0.5s ease;
+    
+}
+
+.pay-now-btn:hover{
+    background-color: grey;
+    color: #fff;
+    width: 100%;
+    border: 1px solid #000;
+}

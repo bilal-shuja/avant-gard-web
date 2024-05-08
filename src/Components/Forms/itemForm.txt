@@ -1,0 +1,586 @@
+import React, { useEffect, useState } from 'react'
+import DiscountArea from '../HomePage/DiscountArea'
+import './FormStyles.scss'
+import { toast } from 'react-toastify'
+import * as Yup from 'yup';
+import { useFormik } from 'formik';
+import CreditCardImage from '../SourceFiles/Images/credit-card.png'
+
+const ItemForm = () => {
+
+    const [paymentMethod, setPaymentMethod] = useState("cod")
+    const [cartItems, setCartItems] = useState([]);
+
+
+    
+
+    const validationSchema = Yup.object().shape({
+        fullName: Yup.string().required('Full name is required'),
+        address: Yup.string().required('Address is required'),
+        city: Yup.string().required('City is required'),
+        postalCode: Yup.string().required('Postal code is required'),
+        phoneNo: Yup.string().required('Phone number is required'),
+        email: Yup.string().email('Invalid email address').required('Email is required'),
+        state: Yup.string().required('State is required'),
+    });
+
+    const formik = useFormik({
+        initialValues: {
+            fullName: '',
+            address: '',
+            city: '',
+            postalCode: '',
+            phoneNo: '',
+            email: '',
+            state: '',
+        },
+        validationSchema: validationSchema,
+        onSubmit: (values) => {
+            apiHit(values);
+        },
+    });
+
+    const { values, handleChange, handleSubmit, errors, touched } = formik;
+
+    useEffect(() => {
+        const getProductDataFromLocalStorage = () => {
+            const productDataJSON = localStorage.getItem('productData');
+
+            if (productDataJSON) {
+                return JSON.parse(productDataJSON);
+            } else {
+                return [];
+            }
+        };
+        const existingData = getProductDataFromLocalStorage();
+        const updatedCartItems = existingData?.map(item => ({ ...item, count: item.count }));
+        setCartItems(updatedCartItems);
+    }, []);
+
+    // total price
+    const calculateTotalPrice = () => {
+        let totalPrice = 0;
+        cartItems.forEach(item => {
+            const price = parseFloat(item.category.price);
+            const count = item.count;
+            totalPrice += price * count;
+        });
+        return totalPrice;
+    };
+    const total = calculateTotalPrice();
+
+
+    // const mappedCategories = cartItems.map(item => item.category);
+
+    // const data = mappedCategories.map(category => ({
+    //     article_id: 3,
+    //     pre_post: category.pre_post,
+    //     p_id: "00SCS",
+    //     is_scanned: 0,
+    //     size: item.articleSize,
+    //     qty: 1,
+    //     total_price: total,
+    //     single_price: total + 200,
+    //     actual_single_price: total,
+    //     on_sale: category.on_sale
+    // }));
+
+
+    const data = cartItems.map(item => ({
+        article_id: item.id,
+        pre_post: item.category.pre_post,
+        p_id: "00SCS",
+        is_scanned: 0,
+        size: item.articleSize,
+        qty: item.count,
+        total_price: total,
+        single_price: total + 200,
+        actual_single_price: total,
+        on_sale: item.category.on_sale
+    }));
+
+    const datas = cartItems.map(item => (item.category))
+    console.log(datas)
+
+    const apiHit = () => {
+        const myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+        const raw = JSON.stringify({
+            total: parseInt(total),
+            sub_total: parseInt(total),
+            user_id: 1,
+            role_id: 1,
+            added_by: "admin",
+            gst: 0,
+            shipment_charges: 200,
+            manual: "false",
+            delivery_method: paymentMethod,
+            shipping_address: values.address,
+            paid: "false",
+            status: "online",
+            cod: paymentMethod === "cod" ? "true" : "false",
+            payment_method: paymentMethod,
+            ledger_description: "fluffer jacket 29",
+            vat: 0,
+            order_data: data,
+            billing_data: {
+                phone: parseInt(values.phoneNo),
+                address: values.address,
+                city: values.city,
+                postcode: values.postalCode,
+                state: values.state,
+            },
+            contact_data: {
+                phone: parseInt(values.phoneNo),
+                name: values.phoneNo,
+                email: values.email,
+            },
+            shipping_data: {
+                phone: parseInt(values.phoneNo),
+                address: values.address,
+                city: values.city,
+                postcode: values.postalCode,
+                state: values.state,
+            },
+        });
+
+        const requestOptions = {
+            method: "POST",
+            headers: myHeaders,
+            body: raw,
+            redirect: "follow"
+        };
+
+        fetch("https://avantgarde.alphanitesofts.net/api/post_order", requestOptions)
+            .then((response) => response.json())
+            .then((result) => {
+                if (result?.status === "200") {
+                    toast.success("Order Placed Successfully")
+                }
+                else {
+                    toast.warn(result?.message)
+                }
+            })
+            .catch((error) => {
+                console.error(error)
+                toast.warn("Something went wrong")
+            });
+    }
+
+
+    return (
+        <div>
+            <DiscountArea />
+            {/* <div className="checkout_area section_padding_100 xx">
+                <div className="container">
+                    <div className="row">
+                        <div className="col-12 col-md-6">
+                            <div className="checkout_details_area mt-50 clearfix">
+                                <div className="cart-page-heading">
+                                    <h5>Billing Address</h5>
+                                </div>
+                                <form onSubmit={handleSubmit} method="post">
+                                    <div className="row">
+                                        <div className="col-md-12 mb-3">
+                                            <label htmlFor="first_name">Full Name <span>*</span></label>
+                                            <input type="text"
+                                                name="fullName"
+                                                id="fullName"
+                                                value={values.fullName}
+                                                onChange={handleChange}
+                                                className={`form-control ${errors.fullName && touched.fullName ? 'is-invalid' : ''}`} />
+                                            {errors.fullName && touched.fullName && <p className="invalid-feedback">{errors.fullName}</p>}
+                                        </div>
+
+                                        <div className="col-12 mb-3">
+                                            <label htmlFor="address">Address <span>*</span></label>
+                                            <input type="text"
+                                                name="address"
+                                                id="address"
+                                                value={values.address}
+                                                onChange={handleChange}
+                                                className={`form-control ${errors.address && touched.address ? 'is-invalid' : ''}`} />
+                                            {errors.address && touched.address && <p className="invalid-feedback">{errors.address}</p>}
+                                        </div>
+                                        <div className="col-6 mb-3">
+                                            <label htmlFor="city">City <span>*</span></label>
+                                            <input type="text"
+                                                name="city"
+                                                id="city"
+                                                value={values.city}
+                                                onChange={handleChange}
+                                                className={`form-control ${errors.city && touched.city ? 'is-invalid' : ''}`} />
+                                            {errors.city && touched.city && <p className="invalid-feedback">{errors.city}</p>}
+                                        </div>
+                                        <div className="col-6 mb-3">
+                                            <label htmlFor="state">State <span>*</span></label>
+                                            <input type="text"
+                                                name="state"
+                                                id="state"
+                                                value={values.state}
+                                                onChange={handleChange}
+                                                className={`form-control ${errors.state && touched.state ? 'is-invalid' : ''}`} />
+                                            {errors.state && touched.state && <p className="invalid-feedback">{errors.state}</p>}
+                                        </div>
+                                        <div className="col-6 mb-3">
+                                            <label htmlFor="postalCode">Postal Code <span>*</span></label>
+                                            <input type="text"
+                                                name="postalCode"
+                                                id="postalCode"
+                                                value={values.postalCode}
+                                                onChange={handleChange}
+                                                className={`form-control ${errors.postalCode && touched.postalCode ? 'is-invalid' : ''}`} />
+                                            {errors.postalCode && touched.postalCode && <p className="invalid-feedback">{errors.postalCode}</p>}
+                                        </div>
+                                        <div className="col-12 mb-3">
+                                            <label htmlFor="phoneNo">Phone No <span>*</span></label>
+                                            <input type="text"
+                                                name="phoneNo"
+                                                id="phoneNo"
+                                                value={values.phoneNo}
+                                                onChange={handleChange}
+                                                className={`form-control ${errors.phoneNo && touched.phoneNo ? 'is-invalid' : ''}`} />
+                                            {errors.phoneNo && touched.phoneNo && <p className="invalid-feedback">{errors.phoneNo}</p>}
+                                        </div>
+                                        <div className="col-12 mb-3">
+                                            <label htmlFor="email">Email Address <span>*</span></label>
+                                            <input type="text"
+                                                name="email"
+                                                id="email"
+                                                value={values.email}
+                                                onChange={handleChange}
+                                                className={`form-control ${errors.email && touched.email ? 'is-invalid' : ''}`} />
+                                            {errors.email && touched.email && <p className="invalid-feedback">{errors.email}</p>}
+                                        </div>
+                                        <div className="col-12">
+                                            <div className="custom-control custom-radio d-block mb-2">
+                                                <input type="checkbox" className="custom-control-input" id="customCheck1" />
+                                                <label className="custom-control-label" htmlFor="customCheck1">Terms and conitions</label>
+                                            </div>
+                                            <div className="custom-control custom-checkbox d-block mb-2">
+                                                <input type="checkbox" className="custom-control-input" id="customCheck2" />
+                                                <label className="custom-control-label" htmlFor="customCheck2">Create an accout</label>
+                                            </div>
+                                            <div className="custom-control custom-checkbox d-block">
+                                                <input type="checkbox" className="custom-control-input" id="customCheck3" />
+                                                <label className="custom-control-label" htmlFor="customCheck3">Subscribe to our newsletter</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div className='checkout_details_area clearfix'>
+                                <div className="cart-page-heading mb-3 mt-5">
+                                    <h5>Shipping Method</h5>
+                                </div>
+                                <div className="row">
+                                    <div className='col-12'>
+                                        <div className='card' style={{ backgroundColor: "#f4f2f8", border: "2px solid #b8b8b8" }}>
+                                            <div className="card-body m-0 pt-2 pb-2 ps-3 pe-3">
+                                                <div className="d-flex justify-content-between align-items-end">
+                                                    <p className='mt-2'>Standard Shipping</p>
+                                                    <p style={{ fontWeight: 600 }}>Rs. 200</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className='checkout_details_area clearfix'>
+                                <div className="cart-page-heading mb-3 mt-5">
+                                    <h5>Payment</h5>
+                                    <p>All transactions are secured and encrypted</p>
+                                </div>
+                                <div className="row">
+                                    <div className='col-12'>
+                                        <div className='card' style={{ backgroundColor: "#f4f2f8", border: "2px solid #b8b8b8" }}>
+                                            <div className="card-body m-0 pt-2 pb-2 ps-3 pe-3">
+                                                <div className="d-flex justify-content-between align-items-end">
+                                                    <p className='mt-2'>Standard Shipping</p>
+                                                    <p style={{ fontWeight: 600 }}>Rs. 200</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="col-12 col-md-6 col-lg-5 ml-lg-auto">
+                            <div className="order-details-confirmation">
+                                <div className="cart-page-heading">
+                                    <h5>Your Order</h5>
+                                    <p>The Details</p>
+                                </div>
+                                <ul className="order-details-form mb-4">
+
+                                    {
+                                        cartItems.map((items) => {
+                                            return (
+                                                <>
+                                                    <li><span>{items.category.title}</span> <span>{items.category.price} pkr &nbsp; * &nbsp;{items.count}</span></li>
+                                                </>
+                                            )
+                                        })
+                                    }
+                                    <li><span>Total</span> <span>{total}</span></li>
+                                    <li><span>Shipping</span> <span>200 Pkr</span></li>
+                                    <li><span>Total</span> <span>{total + 200} </span></li>
+                                </ul>
+                                <div id="accordion" role="tablist" className="mb-4">
+                                    <div className="card" onClick={() => setPaymentMethod("PayPal")}>
+                                        <div className="card-header" role="tab" id="headingOne">
+                                            <h6 className="mb-0" >
+                                                <a style={{ fontWeight: paymentMethod === "PayPal" ? 700 : 500 }} data-toggle="collapse" href="#collapseOne" aria-expanded="false" aria-controls="collapseOne"><i className="fa fa-cart-shopping mr-3" />Paypal&nbsp; {paymentMethod === "PayPal" ? <i className='fa-solid fa-check' /> : null} </a>
+                                            </h6>
+                                        </div>
+                                        <div id="collapseOne" className="collapse" role="tabpanel" aria-labelledby="headingOne" data-parent="#accordion">
+                                            <div className="card-body">
+                                                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin pharetra tempor so dales. Phasellus sagittis auctor gravida. Integ er bibendum sodales arcu id te mpus. Ut consectetur lacus.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="card" onClick={() => setPaymentMethod("cod")}>
+                                        <div className="card-header" role="tab" id="headingTwo">
+                                            <h6 className="mb-0">
+                                                <a style={{ fontWeight: paymentMethod === "cod" ? 700 : 500 }} className="collapsed" data-toggle="collapse" href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo"><i className="fa fa-wallet mr-3" />cash on delievery&nbsp; {paymentMethod === "cod" ? <i className='fa-solid fa-check' /> : null} </a>
+                                            </h6>
+                                        </div>
+                                        <div id="collapseTwo" className="collapse" role="tabpanel" aria-labelledby="headingTwo" data-parent="#accordion">
+                                            <div className="card-body">
+                                                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Explicabo quis in veritatis officia inventore, tempore provident dignissimos.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="card" onClick={() => setPaymentMethod("bank")}>
+                                        <div className="card-header" role="tab" id="headingFour">
+                                            <h6 className="mb-0">
+                                                <a style={{ fontWeight: paymentMethod === "bank" ? 700 : 500 }} className="collapsed" data-toggle="collapse" href="#collapseFour" aria-expanded="true" aria-controls="collapseFour"><i className="fa fa-building-columns mr-3" />direct bank transfer&nbsp; {paymentMethod === "BANK" ? <i className='fa-solid fa-check' /> : null} </a>
+                                            </h6>
+                                        </div>
+                                        <div id="collapseFour" className="collapse show" role="tabpanel" aria-labelledby="headingThree" data-parent="#accordion">
+                                            <div className="card-body">
+                                                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Est cum autem eveniet saepe fugit, impedit magni.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <a type='summit' onClick={handleSubmit} className="btn karl-checkout-btn text-white">Place Order</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div> */}
+
+
+            <div>
+                <div className='row'>
+                    <div className='col-lg-7'>
+                        <div className='row'>
+                            <div className='col-lg-10 ms-auto'>
+                                <form  onSubmit={handleSubmit} method="post" className="container mt-4">
+                                    <div className="mb-3">
+                                        <label htmlFor="exampleFormControlInput1" className="form-label input-head">Contact</label>
+                                        <input type="email" className="form-control  mt-2 mb-1 input-styles" id="exampleFormControlInput1" placeholder="Email" />
+                                    </div>
+                                    <div className="form-check ms-1">
+                                        <input className="form-check-input" type="checkbox" defaultValue id="flexCheckDefault" />
+                                        <label className="form-check-label" style={{ fontSize: "13px" }} htmlFor="flexCheckDefault">
+                                            Email me with news Letters and offers
+                                        </label>
+                                    </div>
+                                    <div className="mb-3 mt-3">
+                                        <label htmlFor="exampleFormControlInput1" className="form-label input-head">Delivery</label>
+                                        <select className="form-select input-styles" aria-label="Default select example">
+                                            <option value={"Pakistan"}>Pakistan</option>
+                                            {/* <option value={2}>Two</option>
+                                    <option value={3}>Three</option> */}
+                                        </select>
+                                        <div className='row'>
+                                            <div className="col-lg-6">
+                                                <input type="email" className="form-control input-styles mt-2 mb-1" id="exampleFormControlInput1" placeholder="First Name" />
+                                            </div>
+                                            <div className="col-lg-6">
+                                                <input type="email" className="form-control input-styles mt-2 mb-1" id="exampleFormControlInput1" placeholder="Last Name" />
+                                            </div>
+                                        </div>
+                                        <textarea className="form-control input-styles mt-2 mb-1" id="exampleFormControlTextarea1" rows={2} placeholder='Complete Address' />
+
+                                        <div className='row'>
+                                            <div className="col-lg-6">
+                                                <input type="email" className="form-control input-styles mt-2 mb-1" id="exampleFormControlInput1" placeholder="City" />
+                                            </div>
+                                            <div className="col-lg-6">
+                                                <input type="email" className="form-control input-styles mt-2 mb-1" id="exampleFormControlInput1" placeholder="Postal Code" />
+                                            </div>
+                                        </div>
+                                        <input type="email" className="form-control input-styles mt-2 mb-1" id="exampleFormControlInput1" placeholder="Phone Number" />
+                                        <div className="form-check ms-1">
+                                            <input className="form-check-input" type="checkbox" defaultValue id="flexCheckDefault" />
+                                            <label className="form-check-label" htmlFor="flexCheckDefault" style={{ fontSize: "13px" }}>
+                                                Save this info for the next Time
+                                            </label>
+                                        </div>
+                                        <div className="form-check ms-1">
+                                            <input className="form-check-input" type="checkbox" defaultValue id="flexCheckDefault" />
+                                            <label className="form-check-label" htmlFor="flexCheckDefault" style={{ fontSize: "13px" }}>
+                                                Email me with news Letters and offers
+                                            </label>
+                                        </div>
+
+                                        {/* <div className="mb-3 mt-2">
+                                            <label htmlFor="exampleFormControlInput1" className="form-label input-head">Shipping Method</label>
+                                            <input type="email" className="form-control  mt-2 mb-1 input-styles" id="exampleFormControlInput1" placeholder="Email" />
+                                        </div>
+
+                                        <div className="mb-3 mt-2">
+                                            <label htmlFor="exampleFormControlInput1" className="form-label input-head">Contact</label>
+                                            <input type="email" className="form-control  mt-2 mb-1 input-styles" id="exampleFormControlInput1" placeholder="Email" />
+                                        </div> */}
+
+
+                                        <div className='checkout_details_area clearfix'>
+                                            <div className="cart-page-heading mb-3 mt-4">
+                                                <h5>Shipping Method</h5>
+                                            </div>
+                                            <div className="row">
+                                                <div className='col-12'>
+                                                    <div className='card' style={{ backgroundColor: "#F5F5F5", border: "1px solid #b8b8b8" }}>
+                                                        <div className="card-body m-0 pt-2 pb-2 ps-3 pe-3">
+                                                            <div className="d-flex justify-content-between align-items-end">
+                                                                <p className='mt-2'>Standard Shipping</p>
+                                                                <p style={{ fontWeight: 600 }}>Rs. 200</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className='checkout_details_area clearfix'>
+                                            <div className="cart-page-heading mb-3 mt-4">
+                                                <h5>Payment Method</h5>
+                                                <p>All transactions are secure and encrypted.</p>
+                                            </div>
+                                            <div className="accordion" id="accordionPanelsStayOpenExample">
+                                                <div className="accordion-item">
+                                                    <h2 className="accordion-header " id="panelsStayOpen-headingOne" onClick={() => setPaymentMethod("online")}>
+                                                        <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseOne" aria-expanded="false" aria-controls="panelsStayOpen-collapseOne">
+                                                            <input
+                                                                type="radio"
+                                                                style={{ marginRight: '10px' }}
+                                                                checked={paymentMethod === "online" ? true : false}
+                                                                readOnly
+                                                            />
+                                                            PAYFAST(Pay via Debit/Credit/Wallet/Bank Account)
+                                                        </button>
+                                                    </h2>
+                                                    <div id="panelsStayOpen-collapseOne" className="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingOne">
+                                                        <div className="accordion-body">
+                                                            <img src={CreditCardImage} style={{ height: "40px" }} className='mx-auto' alt="" />
+                                                            <p> After clicking “Pay now”, you will be redirected to PAYFAST(Pay via Debit/Credit/Wallet/Bank Account) to complete your purchase securely.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="accordion-item">
+                                                    <h2 className="accordion-header" id="panelsStayOpen-headingTwo" onClick={() => setPaymentMethod("cod")}>
+                                                        <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseTwo" aria-expanded="false" aria-controls="panelsStayOpen-collapseTwo">
+                                                            <input
+                                                                type="radio"
+                                                                style={{ marginRight: '10px' }}
+                                                                checked={paymentMethod === "cod" ? true : false}
+                                                                readOnly
+                                                            />
+                                                            Cash on Delivery (COD)
+                                                        </button>
+                                                    </h2>
+                                                    <div id="panelsStayOpen-collapseTwo" className="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingTwo">
+                                                        <div className="accordion-body">
+                                                            Pay cash on delivery.
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="accordion-item">
+                                                    <h2 className="accordion-header" id="panelsStayOpen-headingThree" onClick={() => setPaymentMethod("bank")}>
+                                                        <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseThree" aria-expanded="false" aria-controls="panelsStayOpen-collapseThree">
+                                                            <input
+                                                                type="radio"
+                                                                style={{ marginRight: '10px' }}
+                                                                checked={paymentMethod === "bank" ? true : false}
+                                                                readOnly
+                                                            />
+                                                            Bank Deposit
+                                                        </button>
+                                                    </h2>
+                                                    <div id="panelsStayOpen-collapseThree" className="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingThree">
+                                                        <div className="accordion-body">
+                                                            Make your payment directly into our bank account. Please email a screenshot for proof of payment along with your order number at info@avantgardeoriginal.com. Your order will not be shipped until the funds have cleared in our account.
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-5 mb-5">
+                                        <button className='pay-now-btn'>PAY NOW</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div className='col-lg-5' style={{ backgroundColor: "#f5f5f5", position: "sticky" }}>
+                        <div className='row ms-2 mt-5'>
+                            {
+                                cartItems.map((items) => {
+                                    return (
+                                        <div className='col-lg-10 mb-4'>
+                                            <div className='d-flex align-items-start position-relative'>
+                                                <div className='position-absolute' style={{ top: -10, left: -10 }}>
+                                                    <div className='bg-secondary text-white rounded-circle' style={{ width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                        <span style={{ fontSize: '14px', fontWeight: 600 }}>{items.count}</span>
+                                                    </div>
+                                                </div>
+                                                <img src={`https://avantgardeimages.alphanitesofts.net/${items.category.image[0]}`} alt="product image" className='img-fluid' style={{ height: "75px" }} />
+                                                <div className='flex-grow-1 ms-2'>
+                                                    <p className='mb-0' style={{ fontSize: "15px", fontWeight: 600 }} >{items.category.title}</p>
+                                                    <p className='mt-0' style={{ fontSize: "12px", fontWeight: 500 }}>{items.articleSize}</p>
+                                                </div>
+                                                <p className='me-3' style={{ fontSize: "15px", fontWeight: 600 }}>Rs {items.category.price}</p>
+                                            </div>
+                                        </div>
+                                    )
+                                })
+                            }
+                            <div className='col-lg-10'>
+                                <div className='d-flex align-items-center justify-content-start'>
+                                    <input type="email" className="form-control mt-2 mb-1 input-styles" id="exampleFormControlInput1" placeholder="Discount code or gift card" />
+                                    <button className='btn btn-outline-secondary ms-2 input-styles'>APPLY</button>
+                                </div>
+                                <div>
+                                    <div className='d-flex justify-content-between mt-3'>
+                                        <p className='mb-0' style={{ fontSize: "15px", fontWeight: 500 }}>Sub-Total</p>
+                                        <p className='mb-0' style={{ fontSize: "15px", fontWeight: 600 }}>Rs {total}</p>
+                                    </div>
+                                    <div className='d-flex justify-content-between'>
+                                        <p className='mt-1' style={{ fontSize: "15px", fontWeight: 500 }}>Shipping</p>
+                                        <p className='mt-1' style={{ fontSize: "15px", fontWeight: 600 }}>Free</p>
+                                    </div>
+                                    <div className='d-flex justify-content-between'>
+                                        <p className='mt-1' style={{ fontSize: "15px", fontWeight: 500 }}>Total</p>
+                                        <p className='mt-1' style={{ fontSize: "22px", fontWeight: 700 }}><span style={{ fontSize: "10px", fontWeight: 400, color: "gray" }}>PKR</span> Rs {total}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    )
+}
+
+export default ItemForm                      
